@@ -1,0 +1,6 @@
+print_freq: 10
+output_dir: ./output/custom_dfine
+checkpoint_freq: 10
+sync_bn: True
+find_unused_parameters: False
+use_amp: True

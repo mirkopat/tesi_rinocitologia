@@ -24,8 +24,8 @@ Questa tesi si pone l'obiettivo di **confrontare metriche di object detection st
 
 1. **Addestrare e confrontare tre architetture di object detection** diverse da quelle già valutate su NMCD:
    - YOLOv10 (nano e medium)
-   - RT-DETR (transformer-based)
-   - EfficientDet (compound scaling)
+   - RF-DETR (transformer-based, 20/50/100 epoche)
+   - D-FINE (transformer-based, 50 epoche)
 
 2. **Derivare dalla ground truth per-istanza una ground truth clinica**:
    - A livello di campo microscopico
@@ -41,43 +41,55 @@ Questa tesi si pone l'obiettivo di **confrontare metriche di object detection st
 ---
 
 ## 📁 Struttura del Repository
-
-```
+```bash
 tesi_rinocitologia/
 │
 ├── data/
-│   └── NMCD.coco/              # Dataset in formato COCO
-│       ├── train/              # 400 immagini per l'addestramento
-│       ├── valid/              # 50 immagini per la validazione
-│       ├── test/               # 50 immagini per il test
-│       └── data.yaml           # Configurazione per YOLO
+│ └── NMCD.coco/                       # Dataset in formato COCO
+│ ├── train/                           # 400 immagini per l'addestramento
+│ ├── valid/                           # 50 immagini per la validazione
+│ ├── test/                            # 50 immagini per il test
+│ └── data.yaml                        # Configurazione per YOLO
 │
 ├── notebooks/
-│   ├── 01_esplorazione_dataset.ipynb
-│   ├── 02_preprocessing.ipynb
-│   └── 03_metriche_cliniche.ipynb
+│ ├── 01_esplorazione_dataset.ipynb
+│ ├── 02_preprocessing.ipynb
+│ └── 03_metriche_cliniche.ipynb
 │
 ├── src/
-│   ├── convert_coco_to_yolo.py   # Conversione COCO → YOLO
-│   ├── train_yolo.py             # Addestramento YOLOv10n (50 ep)
-│   ├── train_yolo_medium.py      # Addestramento YOLOv10m (50 ep)
-│   ├── train_yolo_nano_v2.py     # Addestramento YOLOv10n (100 ep)
-│   ├── train_rtdetr.py           # Addestramento RT-DETR
-│   ├── train_efficientdet.py     # Addestramento EfficientDet
-│   ├── metrics_cliniche.py       # Metriche cliniche
-│   ├── evaluate_clinical.py      # Valutazione clinica dei modelli
-│   └── utils.py                  # Funzioni di utilità
+│ ├── convert_coco_to_yolo.py          # Conversione COCO → YOLO
+│ ├── train_yolo.py                    # Addestramento YOLOv10n (50 ep)
+│ ├── train_yolo_medium.py             # Addestramento YOLOv10m (50 ep)
+│ ├── train_yolo_nano_v2.py            # Addestramento YOLOv10n (100 ep)
+│ ├── train_rfdetr.py                  # Addestramento RF-DETR
+│ ├── evaluate_clinical.py             # Valutazione clinica YOLO
+│ ├── evaluate_rfdetr_clinical.py      # Valutazione clinica RF-DETR
+│ ├── calculate_ap_per_class_rfdetr.py # AP per classe RF-DETR
+│ ├── metrics_cliniche.py              # Metriche cliniche
+│ └── utils.py                         # Funzioni di utilità
 │
-├── results/                     # Output dei modelli
-│   ├── yolo10/                  # YOLOv10n (50 ep)
-│   ├── yolo10_medium/           # YOLOv10m (50 ep)
-│   ├── yolo10_nano_v2/          # YOLOv10n (100 ep)
-│   ├── rtdetr/                  # RT-DETR (da fare)
-│   └── efficientdet/            # EfficientDet (da fare)
+├── dfine_scripts/                     # Script personalizzati per D-FINE
+│ ├── README.md
+│ ├── evaluate_clinical_dfine.py
+│ ├── calculate_ap_per_class.py
+│ ├── convert_annotations.py
+│ ├── fix_categories.py
+│ ├── fix_filenames.py
+│ └── configs/
+│ ├── custom_detection.yml
+│ ├── custom_optimizer.yml
+│ ├── custom_runtime.yml
+│ └── dfine_hgnetv2_s_custom.yml
 │
-├── requirements.txt             # Dipendenze Python
-└── README.md                    # Questo file
+├── test/                              # Script di test
+├── requirements.txt                   # Dipendenze Python
+└── README.md                          # Questo file
 ```
+
+**Note:**
+- Le cartelle `results/`, `runs/`, `weights/` e i file `*.pt`, `*.pth`, `*.safetensors` **non sono incluse** nel repository perché troppo pesanti. Chi vuole riprodurre i risultati deve riaddestrare i modelli.
+- La cartella `D-FINE/` **non è inclusa** perché è un repository esterno. Vedi `dfine_scripts/README.md` per le istruzioni.
+- Le immagini del dataset (`data/NMCD.coco/*/images/`) **non sono incluse** perché pesanti. Il dataset va scaricato separatamente.
 
 ---
 
@@ -108,14 +120,11 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
 
 # 5. Per CPU (senza CUDA)
 # pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+
 ```
 
----
-
 ## 🚀 Addestramento dei Modelli
-
 ### YOLOv10
-
 ```bash
 # YOLOv10n - 50 epoche (modello base)
 python src/train_yolo.py
@@ -127,31 +136,40 @@ python src/train_yolo_medium.py
 python src/train_yolo_nano_v2.py
 ```
 
-### RT-DETR (da sviluppare)
-
+### RF-DETR
 ```bash
-python src/train_rtdetr.py
+# RF-DETR - 20 epoche
+python src/train_rfdetr.py  # Modifica EPOCHS = 20
+
+# RF-DETR - 50 epoche
+python src/train_rfdetr.py  # Modifica EPOCHS = 50
+
+# RF-DETR - 100 epoche
+python src/train_rfdetr.py  # Modifica EPOCHS = 100
 ```
 
-### EfficientDet (da sviluppare)
+### D-FINE
 
-```bash
-python src/train_efficientdet.py
-```
+Vedi le istruzioni dettagliate in `dfine_scripts/README.md`.
 
----
 
 ## 📊 Valutazione
-
-### Calcolo delle metriche cliniche
-
+### Calcolo delle metriche cliniche:
 ```bash
+# Per YOLO
 python src/evaluate_clinical.py
+
+# Per RF-DETR
+python src/evaluate_rfdetr_clinical.py
+
+# Per D-FINE
+cd D-FINE
+python evaluate_clinical_dfine.py
 ```
 
 ### Output atteso
 
-```
+```text
 🔬 Paziente 1: 50 immagini
    GT: {'epithelial': 503, 'goblet_cell': 51, ...}
    Pred: {'epithelial': 450, 'eosinophil': 55, ...}
@@ -166,63 +184,79 @@ Paziente 1: GT=nares           | Pred=nares           | ✅
 
 ---
 
-## 📊 Risultati Preliminari
+## 📊 Risultati
 
-### Metriche di Detection (mAP50)
+### Metriche di Detection
 
-| Modello | Epoche | mAP50 | mast_cell AP | eosinophil AP | neutrophil AP |
-|---------|--------|-------|--------------|---------------|---------------|
-| YOLOv10n | 50 | 0.341 | 0.762 | 0.623 | 0.018 |
-| YOLOv10n | 100 | 0.414 | 0.708 | 0.667 | 0.049 |
-| YOLOv10m | 50 | 0.498 | 0.823 | 0.786 | 0.426 |
-| RT-DETR | TBD | TBD | TBD | TBD | TBD |
-| EfficientDet | TBD | TBD | TBD | TBD | TBD |
+| Modello | Epoche | mAP50 | mAP50-95 | mast_cell AP | eosinophil AP | neutrophil AP |
+|---------|--------|-------|----------|--------------|---------------|---------------|
+| YOLOv10n | 50 | 0.341 | 0.180 | 0.762 | 0.623 | 0.018 |
+| YOLOv10n | 100 | 0.414 | 0.245 | 0.708 | 0.667 | 0.049 |
+| YOLOv10m | 50 | **0.498** | **0.256** | **0.823** | **0.786** | **0.426** |
+| RF-DETR | 20 | 0.397 | 0.219 | 0.000 | 0.200 | 0.295 |
+| RF-DETR | 50 | 0.461 | 0.251 | 0.000 | 0.289 | 0.318 |
+| RF-DETR | 100 | 0.430 | 0.236 | 0.000 | 0.269 | 0.323 |
+| D-FINE | 50 | 0.390 | 0.215 | 0.000 | 0.216 | 0.325 |
 
 ### Metriche Cliniche
 
-| Modello | Endotype Accuracy |
-|---------|-------------------|
-| YOLOv10n (50 ep) | 0% |
-| YOLOv10n (100 ep) | 0% |
-| YOLOv10m (50 ep) | 0% |
+| Modello | Epoche | mAP50 | Endotipo Predetto | Endotipo Ground Truth | Corretto? |
+|---------|--------|-------|-------------------|----------------------|-----------|
+| YOLOv10n | 50 | 0.341 | NARES | NARES | ✅ |
+| YOLOv10n | 100 | 0.414 | NARES | NARES | ✅ |
+| YOLOv10m | 50 | 0.498 | NARES | NARES | ✅ |
+| RF-DETR | 20 | 0.397 | NARES | NARES | ✅ |
+| RF-DETR | 50 | 0.461 | NARNE | NARES | ❌ |
+| RF-DETR | 100 | 0.430 | NARNE | NARES | ❌ |
+| D-FINE | 50 | 0.390 | NARNE | NARES | ❌ |
 
-> **Nota**: I risultati clinici sono in fase di ottimizzazione. Il modello sta attualmente sovrastimando i mastociti a causa dello sbilanciamento delle classi.
 
----
+**Nota:** I modelli con mAP più alta (RF-DETR 50 ep, D-FINE) sbagliano l'endotipo, predicendo NARNE invece di NARES. Questo conferma il disallineamento tra metriche di detection e metriche cliniche.
 
 ## 📚 Riferimenti Bibliografici
+- **Camporeale et al. (2026)** - A nasal cytology dataset for object detection and deep learning
+Biomedical Signal Processing and Control
 
-1. **Camporeale et al. (2026)** - *A nasal cytology dataset for object detection and deep learning*  
-   Biomedical Signal Processing and Control
+- **Macchi et al. (2026)** - Standardization of Nasal Cytology: An Expert-based Delphi Consensus
+Current Allergy and Asthma Reports
 
-2. **Macchi et al. (2026)** - *Standardization of Nasal Cytology: An Expert-based Delphi Consensus*  
-   Current Allergy and Asthma Reports
+- **Gelardi (2025)** - Nasal cytology in the rhinology-allergy clinic: From rhinitis to chronic rhinosinusitis with nasal polyps
+Asia Pacific Allergy
 
-3. **Gelardi (2025)** - *Nasal cytology in the rhinology-allergy clinic: From rhinitis to chronic rhinosinusitis with nasal polyps*  
-   Asia Pacific Allergy
+- **Gelardi (2026)** - Nasal Cytology as a Cellular Window into Epithelial Dysfunction and Type 2 Inflammation
+Cells
 
-4. **Gelardi (2026)** - *Nasal Cytology as a Cellular Window into Epithelial Dysfunction and Type 2 Inflammation*  
-   Cells
+- **Shrikrishna & Deepa (2025)** - The Application and Diagnostic Accuracy of Artificial Intelligence in Rhinology
+Cureus
 
-5. **Shrikrishna & Deepa (2025)** - *The Application and Diagnostic Accuracy of Artificial Intelligence in Rhinology*  
-   Cureus
-
-6. **Zhang et al. (2026)** - *Development of Artificial Intelligence for Quantitative Assessment of Nasal Inflammatory Cytology*  
-   International Forum of Allergy & Rhinology
-
----
+- **Zhang et al. (2026)** - Development of Artificial Intelligence for Quantitative Assessment of Nasal Inflammatory Cytology
+International Forum of Allergy & Rhinology
 
 ## 📝 Note Tecniche
-
 ### Su Windows
 - Usare `workers=0` per evitare deadlock nel multiprocessing
+
 - Aggiungere `if __name__ == '__main__':` negli script
+
 - Usare virgolette per percorsi con spazi
 
 ### Sul Dataset
 - I nomi delle classi con spazi (`mast cell`, `epithelial ciliated`) sono stati rinominati per YOLO (`mast_cell`, `ciliated`)
+
 - La classe `cells` (ID 0) è stata esclusa perché generica
+
 - `emazia` (eritrociti) e `artefatto` sono esclusi dalle metriche cliniche
+
+### Sui Modelli
+- **YOLOv10**: Addestrato con Ultralytics, 3 configurazioni testate
+
+- **RF-DETR**: Addestrato con la libreria rfdetr, 3 configurazioni testate
+
+- **D-FINE**: Addestrato clonando il repository ufficiale, 1 configurazione testata
+
+- **RT-DETR**: Testato ma abbandonato per bug di training (0 predizioni)
+
+- **EfficientDet**: Testato ma abbandonato per conflitti di libreria
 
 ## 📄 Licenza
 
