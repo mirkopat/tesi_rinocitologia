@@ -188,30 +188,51 @@ Paziente 1: GT=nares           | Pred=nares           | ✅
 
 ### Metriche di Detection
 
-| Modello | Epoche | mAP50 | mAP50-95 | mast_cell AP | eosinophil AP | neutrophil AP |
-|---------|--------|-------|----------|--------------|---------------|---------------|
-| YOLOv10n | 50 | 0.341 | 0.180 | 0.762 | 0.623 | 0.018 |
-| YOLOv10n | 100 | 0.414 | 0.245 | 0.708 | 0.667 | 0.049 |
-| YOLOv10m | 50 | **0.498** | **0.256** | **0.823** | **0.786** | **0.426** |
-| RF-DETR | 20 | 0.397 | 0.219 | 0.000 | 0.200 | 0.295 |
-| RF-DETR | 50 | 0.461 | 0.251 | 0.000 | 0.289 | 0.318 |
-| RF-DETR | 100 | 0.430 | 0.236 | 0.000 | 0.269 | 0.323 |
-| D-FINE | 50 | 0.390 | 0.215 | 0.000 | 0.216 | 0.325 |
+| Modello | Epoche | mAP50 | mAP50-95 | Precision | Recall | F1 | mast_cell AP | eosinophil AP | neutrophil AP | Tempo |
+|---------|--------|-------|----------|-----------|--------|-----|--------------|---------------|---------------|-------|
+| YOLOv10n | 50 | 0.341 | 0.180 | 0.714 | 0.312 | - | 0.762 | 0.623 | 0.018 | ~1 ora |
+| YOLOv10n | 100 | 0.414 | 0.245 | 0.648 | 0.357 | - | 0.708 | 0.667 | 0.049 | ~1.5 ore |
+| YOLOv10m | 50 | **0.498** | **0.256** | 0.545 | 0.479 | - | **0.823** | **0.786** | **0.426** | ~2 ore |
+| RF-DETR | 20 | 0.397 | 0.219 | 0.359 | 0.418 | 0.377 | 0.000 | 0.200 | 0.295 | ~44 min |
+| RF-DETR | 50 | 0.461 | 0.251 | 0.520 | **0.599** | 0.463 | 0.000 | 0.289 | 0.318 | ~2.3 ore |
+| RF-DETR | 100 | 0.430 | 0.236 | 0.345 | 0.469 | 0.385 | 0.000 | 0.269 | 0.323 | ~4.5 ore |
+| D-FINE | 50 | 0.390 | 0.215 | - | - | - | 0.000 | 0.216 | 0.325 | ~3.3 ore |
 
-### Metriche Cliniche
+### Metriche Cliniche (Paziente Virtuale)
 
-| Modello | Epoche | mAP50 | Endotipo Predetto | Endotipo Ground Truth | Corretto? |
-|---------|--------|-------|-------------------|----------------------|-----------|
-| YOLOv10n | 50 | 0.341 | NARES | NARES | ✅ |
-| YOLOv10n | 100 | 0.414 | NARES | NARES | ✅ |
-| YOLOv10m | 50 | 0.498 | NARES | NARES | ✅ |
-| RF-DETR | 20 | 0.397 | NARES | NARES | ✅ |
-| RF-DETR | 50 | 0.461 | NARNE | NARES | ❌ |
-| RF-DETR | 100 | 0.430 | NARNE | NARES | ❌ |
-| D-FINE | 50 | 0.390 | NARNE | NARES | ❌ |
+| Modello | Epoche | mAP50 | Endotipo Predetto | Endotipo Ground Truth | Corretto? | Accuratezza Gradi AICNA |
+|---------|--------|-------|-------------------|----------------------|-----------|-------------------------|
+| YOLOv10n | 50 | 0.341 | NARESMA | NARES | ❌ | 25.00% (2/8) |
+| YOLOv10n | 100 | 0.414 | NARESMA | NARES | ❌ | 25.00% (2/8) |
+| YOLOv10m | 50 | **0.498** | NARESMA | NARES | ❌ | 37.50% (3/8) |
+| RF-DETR | 20 | 0.397 | NARNE | NARES | ❌ | 62.50% (5/8) |
+| RF-DETR | 50 | 0.461 | NARNE | NARES | ❌ | **75.00% (6/8)** |
+| RF-DETR | 100 | 0.430 | NARNE | NARES | ❌ | 62.50% (5/8) |
+| D-FINE | 50 | 0.390 | **NARES** | NARES | **✅** | 62.50% (5/8) |
 
+> **Nota:** Solo D-FINE (con soglia 0.6) classifica correttamente l'endotipo NARES. I modelli YOLO sovrastimano i mastociti (predicono 502-564 vs 2 ground truth), portando a una falsa diagnosi di NARESMA. I modelli RF-DETR sottostimano eosinofili e mastociti, portando a una falsa diagnosi di NARNE.
 
-**Nota:** I modelli con mAP più alta (RF-DETR 50 ep, D-FINE) sbagliano l'endotipo, predicendo NARNE invece di NARES. Questo conferma il disallineamento tra metriche di detection e metriche cliniche.
+### Analisi dei Gradi AICNA
+
+| Citotipo | GT | YOLOv10n | YOLOv10m | RF-DETR 20 | RF-DETR 50 | RF-DETR 100 | D-FINE |
+|----------|-----|----------|----------|------------|------------|-------------|--------|
+| epithelial | ++++ | +/++ | ++ | ++++ | ++++ | ++++ | ++++ |
+| neutrophil | ++++ | 0 | 0 | ++++ | ++++ | ++++ | ++++ |
+| eosinophil | ++++ | ++++ | ++++ | +++ | ++++ | +++ | ++++ |
+| mast_cell | + | ++++ | ++++ | 0 | 0 | 0 | 0 |
+| lymphocyte | +++ | ++ | + | 0 | 0 | 0 | 0 |
+| goblet_cell | + | 0 | 0 | + | + | + | + |
+| metaplastic | + | 0 | 0 | + | + | + | + |
+| ciliated | + | + | + | + | + | + | 0 |
+| **Accuratezza** | - | **25%** | **37.5%** | **62.5%** | **75%** | **62.5%** | **62.5%** |
+
+### 🔍 Conclusioni Chiave
+
+1. **Il disallineamento è confermato:** I modelli con mAP più alta non sono necessariamente quelli che classificano correttamente l'endotipo.
+2. **Solo D-FINE classifica correttamente NARES** (con soglia 0.6).
+3. **I modelli YOLO sovrastimano i mastociti**, portando a una falsa diagnosi di NARESMA.
+4. **I modelli RF-DETR sottostimano eosinofili e mastociti**, portando a una falsa diagnosi di NARNE.
+5. **L'accuratezza dei gradi AICNA** è massima per RF-DETR (50 ep) con **75.00%**.
 
 ## 📚 Riferimenti Bibliografici
 - **Camporeale et al. (2026)** - A nasal cytology dataset for object detection and deep learning
