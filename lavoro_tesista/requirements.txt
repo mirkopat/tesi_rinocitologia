@@ -1,0 +1,12 @@
+joblib>=1.4
+matplotlib>=3.8
+numpy>=1.26
+opencv-python>=4.9
+pandas>=2.2
+Pillow>=10.3
+scikit-image>=0.23
+scikit-learn>=1.5
+seaborn>=0.13
+tqdm>=4.66
+torch>=2.12
+torchvision>=0.27

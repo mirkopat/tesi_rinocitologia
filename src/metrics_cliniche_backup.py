@@ -54,31 +54,39 @@ def get_aicna_grade(cell_type: str, count: int) -> str:
 
 def classify_endotype(cell_counts: dict) -> str:
     """
-    Classifica l'endotipo secondo la nomenclatura Gelardi/AICNA.
-    Le percentuali sono calcolate sui LEUCOCITI (non su tutte le cellule).
+    Classifica l'endotipo del paziente in base ai conteggi cellulari.
+    
+    Args:
+        cell_counts (dict): Conteggi per tipo di cellula
+    
+    Returns:
+        str: Endotipo classificato
     """
-    leukocytes = (
-        cell_counts.get('neutrophil', 0)
-        + cell_counts.get('eosinophil', 0)
-        + cell_counts.get('lymphocyte', 0)
-        + cell_counts.get('mast_cell', 0)
-    )
-    if leukocytes == 0:
+    total = sum(cell_counts.values())
+    if total == 0:
         return 'normal'
-
-    eos_pct  = cell_counts.get('eosinophil', 0) / leukocytes
-    mast_pct = cell_counts.get('mast_cell', 0) / leukocytes
-    neut_pct = cell_counts.get('neutrophil', 0) / leukocytes
-
+    
+    eos = cell_counts.get('eosinophil', 0)
+    mast = cell_counts.get('mast_cell', 0)
+    neut = cell_counts.get('neutrophil', 0)
+    
+    eos_pct = eos / total
+    mast_pct = mast / total
+    neut_pct = neut / total
+    
+    # Soglie diagnostiche (da Gelardi, 2025)
     if eos_pct > 0.10:
-        return 'nares'
-    if eos_pct > 0.05 and mast_pct > 0.05:
+        return 'allergic_rhinitis'
+    elif eos_pct > 0.05 and mast_pct > 0.05:
         return 'naresma'
-    if mast_pct > 0.05:
+    elif eos_pct > 0.05:
+        return 'nares'
+    elif mast_pct > 0.05:
         return 'narma'
-    if neut_pct > 0.10:
+    elif neut_pct > 0.10:
         return 'narne'
-    return 'normal'
+    else:
+        return 'normal'
 
 def create_virtual_patient(annotations, images, cat_map, n_samples=50):
     """
