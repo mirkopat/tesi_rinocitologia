@@ -1,0 +1,9 @@
+=== METRICHE CLINICHE (Paziente Virtuale) ===
+
+YOLOv10n (50 ep):   Endotipo=NARESMA, Gradi=25.00%
+YOLOv10n (100 ep):  Endotipo=NARESMA, Gradi=25.00%
+YOLOv10m (50 ep):   Endotipo=NARESMA, Gradi=37.50%
+RF-DETR (20 ep):    Endotipo=NARNE,   Gradi=62.50%
+RF-DETR (50 ep):    Endotipo=NARNE,   Gradi=75.00%
+RF-DETR (100 ep):   Endotipo=NARNE,   Gradi=62.50%
+D-FINE (50 ep):     Endotipo=NARES,   Gradi=62.50%

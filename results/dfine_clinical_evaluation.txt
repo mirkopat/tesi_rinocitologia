@@ -1,0 +1,6 @@
+VALUTAZIONE CLINICA D-FINE (50 epoche, soglia 0.6)
+======================================================================
+Endotipo corretto: True
+Accuratezza gradi AICNA: 62.50%
+Ground truth totali: 978
+Predizioni totali: 750
